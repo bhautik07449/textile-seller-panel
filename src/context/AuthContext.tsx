@@ -62,9 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         try {
           const res: any = await api.get('/auth/me');
-          if (res.data) {
-            setUser(res.data);
-            localStorage.setItem('seller_user', JSON.stringify(res.data));
+          const userData = res?.data || res;
+          if (userData && userData.role === 'SELLER') {
+            setUser(userData);
+            localStorage.setItem('seller_user', JSON.stringify(userData));
+          } else {
+            logout();
           }
         } catch (err) {
           console.error('Session verification failed:', err);
@@ -95,9 +98,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const res: any = await api.get('/auth/me');
-      if (res.data) {
-        setUser(res.data);
-        localStorage.setItem('seller_user', JSON.stringify(res.data));
+      const userData = res?.data || res;
+      if (userData && userData.role === 'SELLER') {
+        setUser(userData);
+        localStorage.setItem('seller_user', JSON.stringify(userData));
       }
     } catch (e) {
       console.error(e);

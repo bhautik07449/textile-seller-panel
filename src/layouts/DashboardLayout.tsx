@@ -24,6 +24,7 @@ interface QuotaInfo {
   used: number;
   remaining: number;
   canCreate: boolean;
+  canCreateListing?: boolean;
 }
 
 export default function DashboardLayout() {
@@ -38,7 +39,15 @@ export default function DashboardLayout() {
     async function loadQuota() {
       try {
         const res: any = await api.get('/seller/listing-quota');
-        if (res.data) setQuotaInfo(res.data);
+        const data = res?.data || res;
+        if (data) {
+          setQuotaInfo({
+            total: Number(data.total) || 0,
+            used: Number(data.used) || 0,
+            remaining: Number(data.remaining) || 0,
+            canCreate: data.canCreateListing ?? data.canCreate ?? ((data.remaining || 0) > 0),
+          });
+        }
       } catch (e) {
         console.error(e);
       }

@@ -47,6 +47,9 @@ api.interceptors.response.use(
     toast.error(message);
 
     if (status === 401 && !error.config?.url?.includes('/auth/login') && !error.config?.url?.includes('/auth/register')) {
+      const loginPath = `${import.meta.env.BASE_URL || '/'}login`.replace(/\/+/g, '/');
+      const registerPath = `${import.meta.env.BASE_URL || '/'}register`.replace(/\/+/g, '/');
+
       const refreshToken = localStorage.getItem('seller_refresh_token');
       if (refreshToken && !error.config?._retry && !error.config?.url?.includes('/auth/refresh')) {
         error.config._retry = true;
@@ -66,8 +69,8 @@ api.interceptors.response.use(
             localStorage.removeItem('seller_token');
             localStorage.removeItem('seller_refresh_token');
             localStorage.removeItem('seller_user');
-            if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-              window.location.href = '/login';
+            if (window.location.pathname !== loginPath && window.location.pathname !== registerPath) {
+              window.location.href = loginPath;
             }
           });
         } catch {
@@ -78,8 +81,8 @@ api.interceptors.response.use(
       localStorage.removeItem('seller_token');
       localStorage.removeItem('seller_refresh_token');
       localStorage.removeItem('seller_user');
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        window.location.href = '/login';
+      if (window.location.pathname !== loginPath && window.location.pathname !== registerPath) {
+        window.location.href = loginPath;
       }
     }
     return Promise.reject(new Error(message));

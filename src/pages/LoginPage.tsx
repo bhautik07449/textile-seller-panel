@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Package, Lock, Mail, ArrowRight, AlertCircle, Building2, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -11,8 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, user, token } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && token && user.role === 'SELLER') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +35,17 @@ export default function LoginPage() {
         password,
       });
 
-      if (res.data?.tokens?.accessToken) {
-        if (res.data.user.role !== 'SELLER') {
+      const responseData = res?.data || res;
+
+      if (responseData?.tokens?.accessToken) {
+        if (responseData.user?.role !== 'SELLER') {
           setError('Access restricted: Only registered sellers can access this portal.');
           return;
         }
-        login(res.data.user, res.data.tokens.accessToken, res.data.tokens.refreshToken);
-        navigate('/dashboard');
+        login(responseData.user, responseData.tokens.accessToken, responseData.tokens.refreshToken);
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError('Login failed: Unexpected response from server.');
       }
     } catch (err: any) {
       setError(err.message || 'Invalid email or password.');
