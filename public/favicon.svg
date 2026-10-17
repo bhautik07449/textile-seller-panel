@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sellerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <filter id="sellerShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#042f2e" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#sellerGrad)" filter="url(#sellerShadow)" />
+  
+  <!-- Textile Cube with Storefront / Growth Accent -->
+  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 100 L396 175 L396 335 L256 410 L116 335 L116 175 Z" fill="rgba(255,255,255,0.08)" />
+    <path d="M256 100 L256 255 L396 175" />
+    <path d="M256 255 L116 175" />
+    <path d="M256 255 L256 410" />
+    <!-- Merchant Star / Verified Badge -->
+    <path d="M256 230 L264 248 L284 250 L269 263 L273 282 L256 272 L239 282 L243 263 L228 250 L248 248 Z" fill="#facc15" stroke="#facc15" stroke-width="4" />
+  </g>
+</svg>

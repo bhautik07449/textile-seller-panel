@@ -1,0 +1,27 @@
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+
+export const API_ENDPOINTS = {
+  LOGIN: '/auth/login',
+  LOGOUT: '/auth/logout',
+  ME: '/auth/me',
+  REFRESH_TOKEN: '/auth/refresh',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_LISTINGS: '/admin/listings',
+  ADMIN_LISTING_APPROVAL: (id: string) => `/admin/listings/${id}/approval`,
+  ADMIN_SELLERS: '/admin/sellers',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_USER_STATUS: (id: string) => `/admin/users/${id}/status`,
+  ADMIN_AUDIT_LOGS: '/admin/audit-logs',
+  CATEGORIES: '/categories',
+  ADMIN_CATEGORIES: '/admin/categories',
+  ADMIN_CATEGORY_BY_ID: (id: string) => `/admin/categories/${id}`,
+  FABRIC_TYPES: '/fabric-types',
+  ADMIN_FABRIC_TYPES: '/admin/fabric-types',
+  ADMIN_FABRIC_TYPE_BY_ID: (id: string) => `/admin/fabric-types/${id}`,
+  PACKAGES: '/packages',
+  ADMIN_PACKAGES: '/admin/packages',
+  ADMIN_PACKAGE_BY_ID: (id: string) => `/admin/packages/${id}`,
+  ADMIN_SUBSCRIPTIONS: '/admin/subscriptions',
+  ADMIN_SUBSCRIPTION_BY_ID: (id: string) => `/admin/subscriptions/${id}`,
+  ADMIN_PAYMENTS: '/admin/payments',
+};
