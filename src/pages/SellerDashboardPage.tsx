@@ -96,9 +96,9 @@ export default function SellerDashboardPage() {
               {sub?.packageNameSnapshot || 'No Active Package'}
             </div>
             <p className="text-xs font-medium text-slate-500 mt-1">
-              {sub?.currentPeriodEnd
-                ? `Expires on ${new Date(sub.currentPeriodEnd).toLocaleDateString()}`
-                : 'Subscribe to a package to start listing stock'}
+              {sub?.status === 'ACTIVE'
+                ? 'Quota-Based Plan • No Monthly Expiry'
+                : 'Purchase a listing pack to start posting fabric lots'}
             </p>
           </div>
 
@@ -107,7 +107,7 @@ export default function SellerDashboardPage() {
               to="/subscription"
               className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
-              Manage / Upgrade Plan <ArrowUpRight className="w-3.5 h-3.5" />
+              Purchase Listing Credits <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>

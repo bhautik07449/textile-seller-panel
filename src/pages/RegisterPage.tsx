@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, Mail, Phone, Building2, User, MapPin, ArrowRight, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, Phone, Building2, User, MapPin, ArrowRight, AlertCircle, Clock, CheckCircle2, LocateFixed, Loader2, Sparkles, Check } from 'lucide-react';
 import api from '../api/client';
 import CommonTextField from '../components/widgets/common_textField';
 import CommonButton from '../components/widgets/common_button';
@@ -14,13 +14,105 @@ export default function RegisterPage() {
     companyName: '',
     city: '',
     state: '',
+    addressLine: '',
+    postalCode: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+  const [locations, setLocations] = useState<{ city: string; state: string; count?: number }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationSuccessMsg, setLocationSuccessMsg] = useState('');
   const [error, setError] = useState('');
   const [submittedData, setSubmittedData] = useState<{ companyName: string; email: string; phone: string } | null>(null);
 
+  useEffect(() => {
+    async function fetchLocations() {
+      try {
+        const res: any = await api.get('/locations');
+        const locs = res?.data?.data || res?.data || res || [];
+        if (Array.isArray(locs) && locs.length > 0) {
+          setLocations(locs);
+        }
+      } catch (err) {
+        // silent fail
+      }
+    }
+    fetchLocations();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Live geolocation is not supported in this browser.');
+      return;
+    }
+
+    setDetectingLocation(true);
+    setError('');
+    setLocationSuccessMsg('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          if (!res.ok) throw new Error('Failed to reverse geocode');
+          const data = await res.json();
+          const addr = data.address || {};
+          const detectedCity =
+            addr.city ||
+            addr.town ||
+            addr.village ||
+            addr.county ||
+            addr.state_district ||
+            '';
+          const detectedState = addr.state || '';
+          const postal = addr.postcode || '';
+          const addressLine = [addr.suburb || addr.neighbourhood, addr.road].filter(Boolean).join(', ');
+
+          setFormData((prev) => ({
+            ...prev,
+            city: detectedCity || prev.city,
+            state: detectedState || prev.state,
+            postalCode: postal || prev.postalCode,
+            addressLine: addressLine || prev.addressLine,
+            latitude,
+            longitude,
+          }));
+
+          if (detectedCity || detectedState) {
+            setLocationSuccessMsg(`Location auto-detected: ${[detectedCity, detectedState].filter(Boolean).join(', ')}`);
+          } else {
+            setLocationSuccessMsg('GPS coordinates captured. Please enter your city and state name below.');
+          }
+        } catch (err: any) {
+          console.warn('Geolocation lookup issue:', err);
+          setError('Location coordinates detected, but city name lookup failed. Please enter your city and state manually.');
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (err) => {
+        setDetectingLocation(false);
+        setError(`Location access permission error (${err.message}). Please enter your city and state manually.`);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const handleSelectHub = (hub: { city: string; state: string }) => {
+    setFormData((prev) => ({
+      ...prev,
+      city: hub.city,
+      state: hub.state,
+    }));
+    setLocationSuccessMsg(`Location set: ${hub.city}, ${hub.state}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +216,7 @@ export default function RegisterPage() {
             name="companyName"
             value={formData.companyName}
             onChange={handleChange}
-            placeholder="e.g. Surat Tex Mills Pvt Ltd"
+            placeholder="e.g. Paramount Textile Mills Pvt Ltd"
             prefixIcon={<Building2 className="w-4 h-4" />}
             required
           />
@@ -163,25 +255,95 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <CommonTextField
-              label="City *"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              placeholder="e.g. Surat"
-              prefixIcon={<MapPin className="w-4 h-4" />}
-              required
-            />
+          {/* Mill Location Section with Live GPS Auto-Detection */}
+          <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                  Mill / Warehouse Location *
+                </label>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Directly sets location for all your surplus fabric listings
+                </p>
+              </div>
 
-            <CommonTextField
-              label="State *"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              placeholder="e.g. Gujarat"
-              required
-            />
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={detectingLocation}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs disabled:opacity-60 shrink-0"
+              >
+                {detectingLocation ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Fetching GPS...
+                  </>
+                ) : (
+                  <>
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    Auto-Detect Location
+                  </>
+                )}
+              </button>
+            </div>
+
+            {locationSuccessMsg && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold flex items-center gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>{locationSuccessMsg}</span>
+              </div>
+            )}
+
+            {/* Quick Hub Selection Chips from registered hubs */}
+            {locations.length > 0 && (
+              <div>
+                <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                  Or quick-pick textile hub:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {locations.slice(0, 8).map((hub) => {
+                    const isSelected = formData.city.toLowerCase() === hub.city.toLowerCase();
+                    return (
+                      <button
+                        key={hub.city}
+                        type="button"
+                        onClick={() => handleSelectHub(hub)}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:bg-blue-50/40'
+                        }`}
+                      >
+                        {hub.city}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* City & State inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <CommonTextField
+                label="City *"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="e.g. City"
+                prefixIcon={<MapPin className="w-4 h-4" />}
+                required
+              />
+
+              <CommonTextField
+                label="State *"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                placeholder="e.g. State"
+                required
+              />
+            </div>
           </div>
 
           <CommonTextField

@@ -14,7 +14,8 @@ import {
   Sparkles,
   AlertCircle,
   Plus,
-  BarChart3
+  BarChart3,
+  ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
@@ -57,9 +58,10 @@ export default function DashboardLayout() {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Purchase Stock (Buy)', path: '/purchase-stock', icon: ShoppingCart },
+    { label: 'My Listed Stock (Sell)', path: '/listings', icon: ListFilter },
+    { label: 'Add Stock Lot', path: '/listings/new', icon: PackagePlus, highlight: true },
     { label: 'Performance & Inquiries', path: '/analytics', icon: BarChart3 },
-    { label: 'My Listings', path: '/listings', icon: ListFilter },
-    { label: 'Create Listing', path: '/listings/new', icon: PackagePlus, highlight: true },
     { label: 'Subscription & Quota', path: '/subscription', icon: CreditCard },
     { label: 'Company Profile', path: '/profile', icon: UserCheck },
   ];
@@ -73,10 +75,12 @@ export default function DashboardLayout() {
     switch (pathname) {
       case '/dashboard':
         return { title: 'Seller Dashboard', desc: 'Overview of active stock lots, quota consumption, and buyer inquiries.' };
+      case '/purchase-stock':
+        return { title: 'Purchase Surplus Stock Lots', desc: 'Browse and source surplus fabric directly from verified textile mills at clearance rates.' };
       case '/listings':
         return { title: 'My Fabric Stock Listings', desc: 'Manage your surplus lots, pricing, inspection status, and availability.' };
       case '/listings/new':
-        return { title: 'Create Stock Listing', desc: 'Publish a new dead textile lot to the marketplace catalog.' };
+        return { title: 'Add Stock Lot (सरल लिस्टिंग)', desc: 'Publish a new dead textile lot to the marketplace catalog with simple basic details.' };
       case '/subscription':
         return { title: 'Subscription & Quota', desc: 'Manage your active subscription plan, billing details, and listing credits.' };
       case '/profile':
@@ -143,22 +147,27 @@ export default function DashboardLayout() {
 
       {/* Quota Mini Widget in Sidebar */}
       {quotaInfo && (
-        <div className="mx-3.5 mb-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 text-xs shadow-2xs">
+        <div className="mx-3.5 mb-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 text-xs shadow-2xs">
           <div className="flex items-center justify-between text-slate-600 mb-1.5">
-            <span className="font-bold text-slate-800">Listing Credits</span>
-            <span className="text-blue-600 font-extrabold">{quotaInfo.remaining} left</span>
+            <span className="font-bold text-slate-800">Listing Quota</span>
+            <span className={`font-extrabold ${quotaInfo.remaining > 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+              {quotaInfo.remaining} lots left
+            </span>
           </div>
           <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-blue-600 h-full rounded-full transition-all duration-500"
+              className={`h-full rounded-full transition-all duration-500 ${quotaInfo.remaining > 0 ? 'bg-blue-600' : 'bg-rose-500'}`}
               style={{
                 width: `${quotaInfo.total > 0 ? (quotaInfo.used / quotaInfo.total) * 100 : 0}%`,
               }}
             ></div>
           </div>
-          <span className="text-[11px] font-medium text-slate-500 mt-1.5 block">
-            {quotaInfo.used} of {quotaInfo.total} credits used
-          </span>
+          <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 mt-2">
+            <span>{quotaInfo.used}/{quotaInfo.total} used</span>
+            <Link to="/subscription" className="text-blue-600 font-bold hover:underline">
+              + Buy More
+            </Link>
+          </div>
         </div>
       )}
 

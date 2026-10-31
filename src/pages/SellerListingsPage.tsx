@@ -15,6 +15,13 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Trash2,
+  ShoppingCart,
+  Package,
+  Camera,
+  Film,
+  Video,
+  MapPin,
+  Calendar,
 } from 'lucide-react';
 import { ColDef } from 'ag-grid-community';
 import api from '../api/client';
@@ -28,16 +35,20 @@ import { toast } from '../components/ui/toast';
 interface ListingItem {
   id: string;
   title: string;
+  description?: string;
   slug: string;
   status: string;
-  conditionCode: string;
-  quantityAmount: number | string;
-  quantityUnit: string;
+  conditionCode?: string;
+  quantityAmount?: number | string;
+  quantityUnit?: string;
   priceAmount?: number | string;
   priceUnit?: string;
   city: string;
   state: string;
+  videoUrl?: string;
   rejectionReason?: string;
+  createdAt?: string;
+  publishedAt?: string;
   category?: {
     name: string;
   };
@@ -115,30 +126,44 @@ export default function SellerListingsPage() {
   const columnDefs = useMemo<ColDef<ListingItem>[]>(
     () => [
       {
-        headerName: 'Stock Lot & Photo',
+        headerName: 'Stock Lot & Media',
         field: 'title',
         flex: 2.2,
-        minWidth: 320,
+        minWidth: 280,
         cellRenderer: (params: any) => {
           const item = params.data;
           if (!item) return null;
           const thumb =
             item.images?.[0]?.imageUrl ||
             'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&auto=format&fit=crop&q=80';
+          const imgCount = item.images?.length || 0;
           return (
             <div className="flex items-center gap-3 w-full min-w-0 overflow-hidden py-1">
-              <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-2xs">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-2xs">
                 <img src={thumb} alt={item.title} className="w-full h-full object-cover" />
+                {imgCount > 1 && (
+                  <span className="absolute bottom-0 right-0 bg-black/75 text-white text-[9px] font-bold px-1 rounded-tl">
+                    +{imgCount - 1}
+                  </span>
+                )}
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <span className="font-bold text-slate-900 block truncate leading-tight text-xs md:text-sm" title={item.title}>
                   {item.title}
                 </span>
-                <span className="text-xs font-medium text-slate-500 block truncate">
-                  {item.category?.name || 'Textile'} • {item.conditionCode?.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                    <Camera className="w-3 h-3 text-slate-400" />
+                    {imgCount} {imgCount === 1 ? 'Photo' : 'Photos'}
+                  </span>
+                  {item.videoUrl && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      <Film className="w-2.5 h-2.5" /> Video
+                    </span>
+                  )}
+                </div>
                 {item.status === 'REJECTED' && item.rejectionReason && (
-                  <span className="text-[10px] text-rose-600 block truncate font-medium">
+                  <span className="text-[10px] text-rose-600 block truncate font-medium mt-0.5">
                     Reason: {item.rejectionReason}
                   </span>
                 )}
@@ -148,42 +173,42 @@ export default function SellerListingsPage() {
         },
       },
       {
-        headerName: 'Quantity',
-        field: 'quantityAmount',
-        width: 140,
+        headerName: 'Description',
+        field: 'description',
+        flex: 2.2,
+        minWidth: 260,
         cellRenderer: (params: any) => {
           const item = params.data;
           if (!item) return null;
           return (
-            <span className="font-bold text-slate-900 text-xs">
-              {Number(item.quantityAmount).toLocaleString()} {item.quantityUnit}
-            </span>
-          );
-        },
-      },
-      {
-        headerName: 'Price',
-        field: 'priceAmount',
-        width: 140,
-        cellRenderer: (params: any) => {
-          const item = params.data;
-          if (!item) return null;
-          return item.priceAmount ? (
-            <span className="text-blue-600 font-bold text-xs">
-              ₹{Number(item.priceAmount).toLocaleString()} {item.priceUnit}
-            </span>
-          ) : (
-            <span className="text-slate-400 text-xs italic">On Request</span>
+            <div className="py-1 w-full min-w-0 flex items-center h-full">
+              <p
+                className="text-xs text-slate-600 line-clamp-2 leading-relaxed whitespace-pre-line"
+                title={item.description}
+              >
+                {item.description || 'No description provided'}
+              </p>
+            </div>
           );
         },
       },
       {
         headerName: 'Location',
         valueGetter: (params: any) => (params.data ? `${params.data.city}, ${params.data.state}` : ''),
-        width: 150,
-        cellRenderer: (params: any) => (
-          <span className="text-slate-700 text-xs font-medium">{params.value}</span>
-        ),
+        width: 160,
+        cellRenderer: (params: any) => {
+          const item = params.data;
+          if (!item) return null;
+          return (
+            <div className="flex flex-col justify-center py-1">
+              <span className="text-slate-800 text-xs font-bold flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                {item.city}, {item.state}
+              </span>
+              <span className="text-[10px] text-slate-400">Auto-Set from Profile</span>
+            </div>
+          );
+        },
       },
       {
         headerName: 'Status',
@@ -198,6 +223,21 @@ export default function SellerListingsPage() {
               <Icon className="w-3 h-3" />
               {badge.label}
             </Badge>
+          );
+        },
+      },
+      {
+        headerName: 'Posted Date',
+        field: 'createdAt',
+        width: 125,
+        cellRenderer: (params: any) => {
+          const item = params.data;
+          if (!item || !item.createdAt) return null;
+          const date = new Date(item.createdAt);
+          return (
+            <span className="text-xs text-slate-600 font-medium">
+              {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
           );
         },
       },
@@ -281,6 +321,24 @@ export default function SellerListingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Dual Switcher Bar: My Stock (Sell) vs Purchase Stock (Buy) */}
+      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90 w-fit">
+        <button
+          type="button"
+          className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-xs flex items-center gap-1.5"
+        >
+          <Package className="w-4 h-4" />
+          <span>My Stock Listings (Sell)</span>
+        </button>
+        <Link
+          to="/purchase-stock"
+          className="px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5"
+        >
+          <ShoppingCart className="w-4 h-4" />
+          <span>Browse & Purchase Stock (Buy)</span>
+        </Link>
+      </div>
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -349,7 +407,7 @@ export default function SellerListingsPage() {
           height="560px"
           defaultPageSize={10}
           pageSizeOptions={[10, 20, 50]}
-          searchPlaceholder="Quick filter listings by title, quantity, price..."
+          searchPlaceholder="Quick filter listings by title, description, location..."
           emptyMessage="No stock listings found in this category"
         />
       ) : loading ? (
@@ -377,6 +435,7 @@ export default function SellerListingsPage() {
             const thumb =
               item.images?.[0]?.imageUrl ||
               'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&auto=format&fit=crop&q=80';
+            const imgCount = item.images?.length || 0;
 
             return (
               <Card
@@ -384,45 +443,55 @@ export default function SellerListingsPage() {
                 className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
                 {/* Left: Thumbnail & Details */}
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-100">
+                <div className="flex items-start gap-4 flex-1 min-w-0">
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 shadow-2xs">
                     <img src={thumb} alt={item.title} className="w-full h-full object-cover" />
+                    {imgCount > 1 && (
+                      <span className="absolute bottom-1 right-1 bg-black/75 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        +{imgCount - 1}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={badge.badgeVariant} className="flex items-center gap-1">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={badge.badgeVariant} className="flex items-center gap-1 text-[11px] font-bold">
                         <Icon className="w-3 h-3" />
                         {badge.label}
                       </Badge>
-                      <span className="text-[11px] text-slate-400">
-                        {item.category?.name} • {item.conditionCode.replace('_', ' ')}
+                      <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                        <Camera className="w-3 h-3 text-slate-400" />
+                        {imgCount} {imgCount === 1 ? 'Photo' : 'Photos'}
                       </span>
+                      {item.videoUrl && (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          <Film className="w-3 h-3" /> Video Attached
+                        </span>
+                      )}
+                      {item.createdAt && (
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
                     </div>
 
-                    <h3 className="font-bold text-slate-900 text-base">{item.title}</h3>
+                    <h3 className="font-bold text-slate-900 text-base leading-tight truncate" title={item.title}>
+                      {item.title}
+                    </h3>
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium">
-                      <span>
-                        Volume:{' '}
-                        <strong className="text-slate-800">
-                          {Number(item.quantityAmount).toLocaleString()} {item.quantityUnit}
-                        </strong>
+                    {item.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                      <span className="flex items-center gap-1 text-slate-800 font-bold">
+                        <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                        {item.city}, {item.state}
                       </span>
-                      <span>•</span>
-                      <span>
-                        Price:{' '}
-                        <strong className="text-blue-600">
-                          {item.priceAmount ? `₹${item.priceAmount} ${item.priceUnit}` : 'On Request'}
-                        </strong>
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Location:{' '}
-                        <strong className="text-slate-800">
-                          {item.city}, {item.state}
-                        </strong>
-                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">(Auto-Set from Profile)</span>
                     </div>
 
                     {/* Rejection notice */}

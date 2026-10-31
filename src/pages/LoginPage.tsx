@@ -94,16 +94,26 @@ export default function LoginPage() {
             required
           />
 
-          <CommonTextField
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            prefixIcon={<Lock className="w-4 h-4" />}
-            isPassword
-            required
-          />
+          <div>
+            <CommonTextField
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              prefixIcon={<Lock className="w-4 h-4" />}
+              isPassword
+              required
+            />
+            <div className="flex justify-end mt-1.5">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+          </div>
 
           <CommonButton
             type="submit"

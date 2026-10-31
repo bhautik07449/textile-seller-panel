@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, MapPin, Phone, Mail, Globe, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Globe, Save, CheckCircle2, AlertCircle, LocateFixed, Loader2, Check } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import CommonTextField from '../components/widgets/common_textField';
@@ -20,34 +20,102 @@ export default function SellerProfilePage() {
     postalCode: '',
     websiteUrl: '',
     mapUrl: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     publicContactEnabled: true,
   });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationSuccessMsg, setLocationSuccessMsg] = useState('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Live geolocation is not supported in this browser.');
+      return;
+    }
+
+    setDetectingLocation(true);
+    setError('');
+    setLocationSuccessMsg('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          if (!res.ok) throw new Error('Reverse geocode failed');
+          const data = await res.json();
+          const addr = data.address || {};
+          const detectedCity =
+            addr.city ||
+            addr.town ||
+            addr.village ||
+            addr.county ||
+            addr.state_district ||
+            '';
+          const detectedState = addr.state || '';
+          const postal = addr.postcode || '';
+          const addressLine = [addr.suburb || addr.neighbourhood, addr.road].filter(Boolean).join(', ');
+
+          setProfile((prev) => ({
+            ...prev,
+            city: detectedCity || prev.city,
+            state: detectedState || prev.state,
+            postalCode: postal || prev.postalCode,
+            addressLine: addressLine || prev.addressLine,
+            latitude,
+            longitude,
+          }));
+
+          if (detectedCity) {
+            setLocationSuccessMsg(`Location fetched: ${detectedCity}${detectedState ? `, ${detectedState}` : ''}`);
+          } else {
+            setLocationSuccessMsg('GPS coordinates captured. Please enter your city name.');
+          }
+        } catch (err: any) {
+          console.warn('Geolocation lookup issue:', err);
+          setError('Location coordinates detected, but address lookup failed. Please type city & state manually.');
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (err) => {
+        setDetectingLocation(false);
+        setError(`Location access permission error (${err.message}).`);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   useEffect(() => {
     async function loadProfile() {
       try {
         setLoading(true);
         const res: any = await api.get('/seller/profile');
-        if (res.data) {
+        const data = res?.data?.data || res?.data || res;
+        if (data) {
           setProfile({
-            companyName: res.data.companyName || '',
-            contactPerson: res.data.contactPerson || '',
-            description: res.data.description || '',
-            publicEmail: res.data.publicEmail || '',
-            publicPhone: res.data.publicPhone || '',
-            whatsappPhone: res.data.whatsappPhone || '',
-            addressLine: res.data.addressLine || '',
-            city: res.data.city || '',
-            state: res.data.state || '',
-            postalCode: res.data.postalCode || '',
-            websiteUrl: res.data.websiteUrl || '',
-            mapUrl: res.data.mapUrl || '',
-            publicContactEnabled: res.data.publicContactEnabled !== false,
+            companyName: data.companyName || '',
+            contactPerson: data.contactPerson || '',
+            description: data.description || '',
+            publicEmail: data.publicEmail || '',
+            publicPhone: data.publicPhone || '',
+            whatsappPhone: data.whatsappPhone || '',
+            addressLine: data.addressLine || '',
+            city: data.city || '',
+            state: data.state || '',
+            postalCode: data.postalCode || '',
+            websiteUrl: data.websiteUrl || '',
+            mapUrl: data.mapUrl || '',
+            latitude: data.latitude ? parseFloat(String(data.latitude)) : null,
+            longitude: data.longitude ? parseFloat(String(data.longitude)) : null,
+            publicContactEnabled: data.publicContactEnabled !== false,
           });
         }
       } catch (err: any) {
@@ -178,37 +246,78 @@ export default function SellerProfilePage() {
           placeholder="Tell buyers about your fabric specialities, weaving capacity, export stock history..."
         />
 
-        <CommonTextField
-          label="Warehouse / Mill Address Line"
-          name="addressLine"
-          value={profile.addressLine}
-          onChange={handleChange}
-          placeholder="e.g. Plot 42, Millenium Textile Market, Ring Road"
-        />
+        {/* Location Section */}
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-blue-600" />
+                Mill / Warehouse Location
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                This location is automatically assigned to all your surplus fabric listings.
+              </p>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <button
+              type="button"
+              onClick={handleDetectLocation}
+              disabled={detectingLocation}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs disabled:opacity-60 shrink-0"
+            >
+              {detectingLocation ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Fetching Location...
+                </>
+              ) : (
+                <>
+                  <LocateFixed className="w-3.5 h-3.5" />
+                  Auto-Detect via GPS
+                </>
+              )}
+            </button>
+          </div>
+
+          {locationSuccessMsg && (
+            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>{locationSuccessMsg}</span>
+            </div>
+          )}
+
           <CommonTextField
-            label="City *"
-            name="city"
-            value={profile.city}
+            label="Warehouse / Mill Address Line"
+            name="addressLine"
+            value={profile.addressLine}
             onChange={handleChange}
-            required
+            placeholder="e.g. Plot 42, Millenium Textile Market, Ring Road"
           />
 
-          <CommonTextField
-            label="State *"
-            name="state"
-            value={profile.state}
-            onChange={handleChange}
-            required
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <CommonTextField
+              label="City *"
+              name="city"
+              value={profile.city}
+              onChange={handleChange}
+              required
+            />
 
-          <CommonTextField
-            label="Postal Code"
-            name="postalCode"
-            value={profile.postalCode}
-            onChange={handleChange}
-          />
+            <CommonTextField
+              label="State *"
+              name="state"
+              value={profile.state}
+              onChange={handleChange}
+              required
+            />
+
+            <CommonTextField
+              label="Postal Code"
+              name="postalCode"
+              value={profile.postalCode}
+              onChange={handleChange}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

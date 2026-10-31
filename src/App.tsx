@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import RegisterPage from './pages/RegisterPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import SellerListingsPage from './pages/SellerListingsPage';
+import SellerMarketplacePage from './pages/SellerMarketplacePage';
 import CreateListingPage from './pages/CreateListingPage';
 import SellerProfilePage from './pages/SellerProfilePage';
 import SellerSubscriptionPage from './pages/SellerSubscriptionPage';
@@ -40,6 +42,7 @@ export default function App() {
           {/* Public Authentication */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Protected Seller Console */}
           <Route
@@ -52,6 +55,7 @@ export default function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<SellerDashboardPage />} />
+            <Route path="purchase-stock" element={<SellerMarketplacePage />} />
             <Route path="analytics" element={<SellerAnalyticsPage />} />
             <Route path="listings" element={<SellerListingsPage />} />
             <Route path="listings/new" element={<CreateListingPage />} />
