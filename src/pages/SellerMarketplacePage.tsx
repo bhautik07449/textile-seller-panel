@@ -175,8 +175,8 @@ export default function SellerMarketplacePage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="w-44">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+            <div className="w-full sm:w-44">
               <SelectDropdown
                 value={selectedCategory}
                 onChange={(val) => setSelectedCategory(val)}
@@ -189,7 +189,7 @@ export default function SellerMarketplacePage() {
               />
             </div>
 
-            <div className="w-36">
+            <div className="w-full sm:w-36">
               <SelectDropdown
                 value={selectedCity}
                 onChange={(val) => setSelectedCity(val)}
@@ -204,7 +204,7 @@ export default function SellerMarketplacePage() {
 
             <button
               type="submit"
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-xs shrink-0 flex items-center gap-1.5 active:scale-95"
+              className="col-span-2 sm:col-span-1 w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-xs shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Search</span>

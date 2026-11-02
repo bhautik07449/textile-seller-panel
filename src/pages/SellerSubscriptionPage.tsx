@@ -201,18 +201,18 @@ export default function SellerSubscriptionPage() {
   const isQuotaEmpty = !quota || quota.remaining <= 0;
 
   return (
-    <div className="space-y-8 pb-12 font-sans text-slate-800 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 pb-4 sm:pb-8 font-sans text-slate-800 max-w-7xl mx-auto">
       {/* Title */}
       <div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold mb-2">
-          <Coins className="w-3.5 h-3.5" />
-          <span>Pay-Per-Listing Quota (नो मंथली एक्सपायरी)</span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold mb-2">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>100% Free Marketplace (नो मंथली चार्ज)</span>
         </div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          Listing Quota & Credit Packs
+        <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+          Listing Privileges & Free Membership
         </h1>
         <p className="text-xs text-slate-500 mt-0.5 font-medium">
-          Listing credits do not expire monthly. Once your listing limit is reached, simply purchase more listing credits to continue publishing surplus lots.
+          All textile mills and traders enjoy unlimited surplus listings with zero fees, no monthly subscriptions, and direct buyer contact.
         </p>
       </div>
 
@@ -233,82 +233,55 @@ export default function SellerSubscriptionPage() {
         </div>
       )}
 
-      {/* Quota Exhausted Warning Alert */}
-      {isQuotaEmpty && (
-        <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
-              <AlertCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-sm text-amber-950">
-                Your Listing Limit is Exhausted (0 Lots Remaining)
-              </h4>
-              <p className="text-amber-800 mt-0.5 font-medium">
-                Aapki listing limit poori ho gayi hai. Naye fabric lots list karne ke liye niche diye gaye kisi bhi Listing Pack ko purchase karein.
-              </p>
-            </div>
-          </div>
-          <a
-            href="#pricing-packs"
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shrink-0 text-center transition shadow-xs active:scale-95"
-          >
-            Purchase Listing Credits
-          </a>
-        </div>
-      )}
-
       {/* Active Listing Balance Wallet Card */}
-      <Card className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-white border border-slate-200/90 rounded-3xl shadow-xs">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
+      <Card className="p-4 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl shadow-xs">
+        <div className="space-y-2 min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Account Status
             </span>
-            <Badge variant={!isQuotaEmpty ? 'success' : 'warning'}>
-              {!isQuotaEmpty ? 'Active Quota' : 'Quota Exhausted'}
+            <Badge variant="success">
+              100% Free Tier
             </Badge>
             <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              No Monthly Expiry
+              Lifetime Free
             </span>
           </div>
 
-          <h2 className="text-2xl font-extrabold text-slate-900">
-            {quota ? `${quota.remaining} Listing Credits Left` : '0 Listing Credits Left'}
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+            Unlimited Listing Credits
           </h2>
 
           <p className="text-xs text-slate-500 font-medium max-w-lg leading-relaxed">
-            Har listing publish karne par 1 credit consume hota hai. Unused credits expire nahi hote aur aapke balance me rehte hain.
+            Post surplus fabric, rolls, yarns, and leftover lots freely. Zero commission and direct buyer contact.
           </p>
         </div>
 
         {/* Quota Numbers Counter */}
         {quota && (
-          <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/90 flex items-center gap-6 sm:gap-8 text-xs shrink-0 shadow-2xs">
+          <div className="w-full lg:w-auto bg-slate-50 p-3 sm:p-5 rounded-2xl border border-slate-200/90 grid grid-cols-3 gap-2 sm:gap-6 text-xs text-center shadow-2xs">
             <div>
-              <span className="text-slate-400 font-bold uppercase text-[10px] block tracking-wider">
-                Total Purchased
+              <span className="text-slate-400 font-bold uppercase text-[9px] sm:text-[10px] block tracking-wider truncate">
+                Published
               </span>
-              <span className="font-extrabold text-slate-900 text-xl block mt-0.5">
-                {quota.total} <span className="text-xs font-medium text-slate-500">lots</span>
+              <span className="font-extrabold text-slate-900 text-base sm:text-xl block mt-0.5">
+                {quota.used} <span className="text-[10px] sm:text-xs font-medium text-slate-500">lots</span>
               </span>
             </div>
-            <div className="h-8 w-[1px] bg-slate-200" />
-            <div>
-              <span className="text-slate-400 font-bold uppercase text-[10px] block tracking-wider">
-                Lots Used
+            <div className="border-x border-slate-200 px-1 sm:px-2">
+              <span className="text-slate-400 font-bold uppercase text-[9px] sm:text-[10px] block tracking-wider truncate">
+                Credits Left
               </span>
-              <span className="font-extrabold text-slate-600 text-xl block mt-0.5">
-                {quota.used} <span className="text-xs font-medium text-slate-400">lots</span>
+              <span className="font-extrabold text-emerald-600 text-base sm:text-xl block mt-0.5">
+                Unlimited
               </span>
             </div>
-            <div className="h-8 w-[1px] bg-slate-200" />
             <div>
-              <span className="text-blue-600 font-bold uppercase text-[10px] block tracking-wider">
-                Available Left
+              <span className="text-slate-400 font-bold uppercase text-[9px] sm:text-[10px] block tracking-wider truncate">
+                Platform Fee
               </span>
-              <span className="font-extrabold text-blue-600 text-2xl block mt-0.5">
-                {quota.remaining} <span className="text-xs font-bold text-blue-500">lots</span>
+              <span className="font-extrabold text-blue-600 text-base sm:text-xl block mt-0.5">
+                ₹0 Free
               </span>
             </div>
           </div>

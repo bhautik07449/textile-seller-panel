@@ -61,7 +61,9 @@ export default function SellerListingsPage() {
   const [listings, setListings] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'cards' : 'table'
+  );
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const buyerUrl = import.meta.env.VITE_BUYER_PORTAL_URL || 'http://localhost:5175';
 
@@ -322,17 +324,17 @@ export default function SellerListingsPage() {
   return (
     <div className="space-y-6">
       {/* Dual Switcher Bar: My Stock (Sell) vs Purchase Stock (Buy) */}
-      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90 w-fit">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/90 w-full sm:w-fit">
         <button
           type="button"
-          className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-xs flex items-center gap-1.5"
+          className="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-xs flex items-center justify-center gap-1.5"
         >
           <Package className="w-4 h-4" />
           <span>My Stock Listings (Sell)</span>
         </button>
         <Link
           to="/purchase-stock"
-          className="px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5"
+          className="px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5"
         >
           <ShoppingCart className="w-4 h-4" />
           <span>Browse & Purchase Stock (Buy)</span>
@@ -340,15 +342,15 @@ export default function SellerListingsPage() {
       </div>
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">My Stock Listings</h1>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">My Stock Listings</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Manage your fabric lots, track moderation approvals, and mark sold items
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
           {/* View Toggle */}
           <div className="flex items-center p-1 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
             <button
@@ -374,19 +376,20 @@ export default function SellerListingsPage() {
           <Link to="/listings/new">
             <CommonButton className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm">
               <PlusCircle className="w-4 h-4 mr-1.5" />
-              Add New Stock Lot
+              <span className="hidden sm:inline">Add New Stock Lot</span>
+              <span className="sm:hidden">Add Stock</span>
             </CommonButton>
           </Link>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold no-scrollbar">
         {['ALL', 'APPROVED', 'PENDING_APPROVAL', 'REJECTED', 'SOLD', 'INACTIVE'].map((tab) => (
           <button
             key={tab}
             onClick={() => setStatusFilter(tab)}
-            className={`px-3.5 py-2 rounded-xl transition ${
+            className={`px-3 py-1.5 rounded-xl transition whitespace-nowrap select-none ${
               statusFilter === tab
                 ? 'bg-blue-600 text-white shadow-sm font-bold'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -504,76 +507,126 @@ export default function SellerListingsPage() {
                 </div>
 
                 {/* Right: Actions */}
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 justify-end">
-                  {item.status === 'APPROVED' && (
-                    <a
-                      href={`${buyerUrl}/listings/${item.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-xl border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 transition shadow-2xs"
-                      title="Preview on Public Marketplace"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-slate-400" />
-                      View Live
-                    </a>
+                <div className="w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 flex flex-col md:flex-row md:items-center gap-2 shrink-0">
+                  {item.status === 'APPROVED' ? (
+                    <>
+                      {/* Row 1: Primary actions (View Live & Edit) */}
+                      <div className="grid grid-cols-2 md:flex md:items-center gap-2 w-full md:w-auto">
+                        <a
+                          href={`${buyerUrl}/listings/${item.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-9 px-3 rounded-xl border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-2xs active:scale-95"
+                          title="Preview on Public Marketplace"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          <span>View Live</span>
+                        </a>
+
+                        <Link to={`/listings/${item.id}/edit`} className="w-full md:w-auto">
+                          <CommonButton
+                            variant="outline"
+                            size="sm"
+                            className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 h-9 rounded-xl font-bold shadow-2xs justify-center active:scale-95"
+                          >
+                            <Edit className="w-3.5 h-3.5 mr-1" />
+                            <span>Edit</span>
+                          </CommonButton>
+                        </Link>
+                      </div>
+
+                      {/* Row 2: Status & Delete actions (Mark Sold, Hide, Delete) */}
+                      <div className="grid grid-cols-3 md:flex md:items-center gap-2 w-full md:w-auto">
+                        <CommonButton
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(item.id, 'SOLD')}
+                          isLoading={actionLoading === item.id}
+                          className="h-9 text-xs font-bold rounded-xl shadow-2xs justify-center active:scale-95"
+                        >
+                          Mark Sold
+                        </CommonButton>
+
+                        <CommonButton
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(item.id, 'INACTIVE')}
+                          isLoading={actionLoading === item.id}
+                          className="h-9 text-xs text-slate-500 rounded-xl shadow-2xs justify-center active:scale-95"
+                        >
+                          Hide
+                        </CommonButton>
+
+                        <CommonButton
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeleteTarget(item)}
+                          disabled={actionLoading === item.id}
+                          className="h-9 bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 text-xs font-bold rounded-xl shadow-2xs justify-center active:scale-95"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          <span>Delete</span>
+                        </CommonButton>
+                      </div>
+                    </>
+                  ) : item.status === 'INACTIVE' ? (
+                    <div className="grid grid-cols-3 md:flex md:items-center gap-2 w-full md:w-auto">
+                      <Link to={`/listings/${item.id}/edit`} className="w-full md:w-auto">
+                        <CommonButton
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 h-9 rounded-xl font-bold shadow-2xs justify-center active:scale-95"
+                        >
+                          <Edit className="w-3.5 h-3.5 mr-1" />
+                          <span>Edit</span>
+                        </CommonButton>
+                      </Link>
+
+                      <CommonButton
+                        size="sm"
+                        onClick={() => handleStatusChange(item.id, 'APPROVED')}
+                        isLoading={actionLoading === item.id}
+                        className="h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-xs justify-center active:scale-95"
+                      >
+                        Reactivate
+                      </CommonButton>
+
+                      <CommonButton
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteTarget(item)}
+                        disabled={actionLoading === item.id}
+                        className="h-9 bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 text-xs font-bold rounded-xl shadow-2xs justify-center active:scale-95"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <span>Delete</span>
+                      </CommonButton>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:flex md:items-center gap-2 w-full md:w-auto">
+                      <Link to={`/listings/${item.id}/edit`} className="w-full md:w-auto">
+                        <CommonButton
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 h-9 rounded-xl font-bold shadow-2xs justify-center active:scale-95"
+                        >
+                          <Edit className="w-3.5 h-3.5 mr-1" />
+                          <span>Edit</span>
+                        </CommonButton>
+                      </Link>
+
+                      <CommonButton
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteTarget(item)}
+                        disabled={actionLoading === item.id}
+                        className="h-9 bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 text-xs font-bold rounded-xl shadow-2xs justify-center active:scale-95"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <span>Delete</span>
+                      </CommonButton>
+                    </div>
                   )}
-
-                  <Link to={`/listings/${item.id}/edit`}>
-                    <CommonButton
-                      variant="outline"
-                      size="sm"
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 h-8 rounded-xl font-bold shadow-2xs"
-                    >
-                      <Edit className="w-3.5 h-3.5 mr-1" />
-                      Edit
-                    </CommonButton>
-                  </Link>
-
-                  {item.status === 'APPROVED' && (
-                    <CommonButton
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusChange(item.id, 'SOLD')}
-                      isLoading={actionLoading === item.id}
-                      className="h-8 text-xs font-bold rounded-xl shadow-2xs"
-                    >
-                      Mark Sold
-                    </CommonButton>
-                  )}
-
-                  {item.status === 'APPROVED' && (
-                    <CommonButton
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusChange(item.id, 'INACTIVE')}
-                      isLoading={actionLoading === item.id}
-                      className="h-8 text-xs text-slate-500 rounded-xl shadow-2xs"
-                    >
-                      Hide
-                    </CommonButton>
-                  )}
-
-                  {item.status === 'INACTIVE' && (
-                    <CommonButton
-                      size="sm"
-                      onClick={() => handleStatusChange(item.id, 'APPROVED')}
-                      isLoading={actionLoading === item.id}
-                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-xs"
-                    >
-                      Reactivate
-                    </CommonButton>
-                  )}
-
-                  <CommonButton
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDeleteTarget(item)}
-                    disabled={actionLoading === item.id}
-                    className="h-8 bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 text-xs font-bold rounded-xl shadow-2xs"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1" />
-                    Delete
-                  </CommonButton>
                 </div>
               </Card>
             );

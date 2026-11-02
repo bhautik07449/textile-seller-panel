@@ -54,7 +54,7 @@ export default function SellerDashboardPage() {
   const feedback = data?.recentFeedback || [];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans text-slate-800">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans text-slate-800 pb-4 sm:pb-8">
       {/* Welcome Banner Card */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
         <div>
@@ -67,7 +67,7 @@ export default function SellerDashboardPage() {
         </div>
         <Link
           to="/listings/new"
-          className="w-full sm:w-auto justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs hover:shadow-sm flex items-center gap-2 shrink-0 transition-all text-sm select-none active:scale-[0.98]"
+          className="w-fit self-start sm:self-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs hover:shadow-sm inline-flex items-center gap-2 shrink-0 transition-all text-xs sm:text-sm select-none active:scale-[0.98]"
         >
           <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
           <span>Create Stock Listing</span>
@@ -77,70 +77,58 @@ export default function SellerDashboardPage() {
       {/* Subscription & Listing Quota Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
         {/* Active Plan Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-2">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-                Active Subscription
+                Active Membership
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                sub?.status === 'ACTIVE'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-amber-50 text-amber-700 border-amber-200'
-              }`}>
-                {sub?.status || 'No Active Plan'}
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                ACTIVE
               </span>
             </div>
 
-            <div className="text-2xl md:text-3xl font-bold text-slate-900 mt-2">
-              {sub?.packageNameSnapshot || 'No Active Package'}
+            <div className="text-xl sm:text-2xl font-black text-slate-900 mt-2">
+              100% Free Marketplace
             </div>
             <p className="text-xs font-medium text-slate-500 mt-1">
-              {sub?.status === 'ACTIVE'
-                ? 'Quota-Based Plan • No Monthly Expiry'
-                : 'Purchase a listing pack to start posting fabric lots'}
+              Unlimited Lots • Zero Brokerage • Direct Buyer Inquiries
             </p>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-            <Link
-              to="/subscription"
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              Purchase Listing Credits <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
+          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-emerald-600">
+              Lifetime Free Listing Enabled
+            </span>
           </div>
         </div>
 
         {/* Listing Quota Tracker */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-2">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                 Listing Credits
               </span>
-              <span className="text-xs font-bold text-blue-600">{quota?.remaining || 0} Credits Left</span>
+              <span className="text-xs font-bold text-emerald-600">Unlimited Available</span>
             </div>
 
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl md:text-3xl font-bold text-slate-900">{quota?.used || 0}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                {listings.TOTAL || 0}
+              </span>
               <span className="text-xs font-medium text-slate-500">
-                of {quota?.total || 0} credits used this cycle
+                stock lot{listings.TOTAL === 1 ? '' : 's'} published
               </span>
             </div>
 
-            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-3">
-              <div
-                className="bg-blue-600 h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${quota?.total > 0 ? ((quota.used || 0) / quota.total) * 100 : 0}%`,
-                }}
-              ></div>
+            <div className="w-full bg-emerald-100 h-2 rounded-full overflow-hidden mt-3">
+              <div className="bg-emerald-500 h-full rounded-full w-full"></div>
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-slate-100 text-[11px] font-medium text-slate-400">
-            * 1 credit per new stock lot published. Edits are completely free.
+          <div className="pt-3 mt-3 border-t border-slate-100 text-[11px] font-medium text-slate-400">
+            Publish as many surplus fabric lots as needed — 100% free.
           </div>
         </div>
 
@@ -191,15 +179,15 @@ export default function SellerDashboardPage() {
               .map((item: any) => (
                 <div
                   key={item.id}
-                  className="bg-white p-3.5 rounded-xl border border-rose-200 flex items-center justify-between text-xs shadow-2xs"
+                  className="bg-white p-3.5 rounded-xl border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs"
                 >
-                  <div>
-                    <span className="font-bold text-slate-900 block">{item.title}</span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-slate-900 block truncate">{item.title}</span>
                     <span className="text-rose-600 mt-0.5 block font-semibold">Reason: "{item.rejectionReason}"</span>
                   </div>
                   <Link
                     to={`/listings/${item.id}/edit`}
-                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center gap-1 shadow-2xs"
+                    className="w-full sm:w-auto justify-center px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center gap-1 shadow-2xs shrink-0"
                   >
                     <FileEdit className="w-3.5 h-3.5" />
                     Edit & Resubmit
@@ -211,45 +199,45 @@ export default function SellerDashboardPage() {
       )}
 
       {/* Inventory Status Breakdown */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider select-none">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4">
+        <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider select-none">
           Inventory Breakdown by Status
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 shadow-2xs flex items-center justify-between">
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-emerald-700 uppercase block">Approved & Live</span>
-              <span className="text-2xl font-bold text-emerald-800 block mt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-center">
+          <div className="p-3 sm:p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/70 shadow-2xs flex items-center justify-between">
+            <div className="text-left min-w-0 pr-1">
+              <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 uppercase block truncate">Approved & Live</span>
+              <span className="text-xl sm:text-2xl font-bold text-emerald-800 block mt-0.5">
                 {listings.APPROVED || 0}
               </span>
             </div>
-            <CheckCircle2 className="w-6 h-6 text-emerald-600 stroke-[2.2]" />
+            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 stroke-[2.2] shrink-0" />
           </div>
 
-          <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-200/70 shadow-2xs flex items-center justify-between">
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-amber-700 uppercase block">Under Review</span>
-              <span className="text-2xl font-bold text-amber-800 block mt-1">
+          <div className="p-3 sm:p-4 bg-amber-50/60 rounded-xl border border-amber-200/70 shadow-2xs flex items-center justify-between">
+            <div className="text-left min-w-0 pr-1">
+              <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 uppercase block truncate">Under Review</span>
+              <span className="text-xl sm:text-2xl font-bold text-amber-800 block mt-0.5">
                 {listings.PENDING_APPROVAL || 0}
               </span>
             </div>
-            <Clock className="w-6 h-6 text-amber-600 stroke-[2.2]" />
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 stroke-[2.2] shrink-0" />
           </div>
 
-          <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200/70 shadow-2xs flex items-center justify-between">
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-blue-700 uppercase block">Sold Out</span>
-              <span className="text-2xl font-bold text-blue-800 block mt-1">{listings.SOLD || 0}</span>
+          <div className="p-3 sm:p-4 bg-blue-50/60 rounded-xl border border-blue-200/70 shadow-2xs flex items-center justify-between">
+            <div className="text-left min-w-0 pr-1">
+              <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 uppercase block truncate">Sold Out</span>
+              <span className="text-xl sm:text-2xl font-bold text-blue-800 block mt-0.5">{listings.SOLD || 0}</span>
             </div>
-            <Archive className="w-6 h-6 text-blue-600 stroke-[2.2]" />
+            <Archive className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 stroke-[2.2] shrink-0" />
           </div>
 
-          <div className="p-4 bg-rose-50/60 rounded-xl border border-rose-200/70 shadow-2xs flex items-center justify-between">
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-rose-700 uppercase block">Rejected Lots</span>
-              <span className="text-2xl font-bold text-rose-800 block mt-1">{listings.REJECTED || 0}</span>
+          <div className="p-3 sm:p-4 bg-rose-50/60 rounded-xl border border-rose-200/70 shadow-2xs flex items-center justify-between">
+            <div className="text-left min-w-0 pr-1">
+              <span className="text-[10px] sm:text-[11px] font-bold text-rose-700 uppercase block truncate">Rejected Lots</span>
+              <span className="text-xl sm:text-2xl font-bold text-rose-800 block mt-0.5">{listings.REJECTED || 0}</span>
             </div>
-            <XCircle className="w-6 h-6 text-rose-600 stroke-[2.2]" />
+            <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600 stroke-[2.2] shrink-0" />
           </div>
         </div>
       </div>

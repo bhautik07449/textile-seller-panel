@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   Upload,
@@ -15,10 +15,15 @@ import {
   Sparkles,
   ExternalLink,
   FileText,
+  ChevronDown,
+  Check,
+  Plus,
+  Search,
 } from 'lucide-react';
 import api from '../api/client';
 import CommonTextField from '../components/widgets/common_textField';
 import CommonButton from '../components/widgets/common_button';
+import { SelectDropdown, DropdownOption } from '../components/widgets/SelectDropdown';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/ui/toast';
 
@@ -27,6 +32,25 @@ interface QuotaData {
   used: number;
   remaining: number;
 }
+
+interface AdminFabricType {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+const POPULAR_QUALITIES = [
+  '60x60 Cambric',
+  '40x40 Poplin',
+  'Rayon 14kg',
+  'Cotton Slub',
+  'Poly Crepe',
+  'Satin',
+  'Organza',
+  'Chanderi',
+];
 
 export default function CreateListingPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,8 +63,13 @@ export default function CreateListingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Simplified form state: Only Title & Description
+  // Simplified form state: Title, Fabric Quality & Description
   const [title, setTitle] = useState('');
+  const [fabricQuality, setFabricQuality] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customQuality, setCustomQuality] = useState('');
+  const [adminFabricTypes, setAdminFabricTypes] = useState<AdminFabricType[]>([]);
+  const [existingQualities, setExistingQualities] = useState<string[]>([]);
   const [description, setDescription] = useState('');
 
   // Media
@@ -58,13 +87,28 @@ export default function CreateListingPage() {
     async function init() {
       try {
         setLoading(true);
-        const [quotaRes, profileRes]: any = await Promise.all([
+        const [quotaRes, profileRes, qualitiesRes, typesRes]: any = await Promise.all([
           api.get('/seller/listing-quota').catch(() => null),
           api.get('/seller/profile').catch(() => null),
+          api.get('/fabric-qualities').catch(() => null),
+          api.get('/fabric-types').catch(() => null),
         ]);
 
         if (quotaRes?.data) {
           setQuota(quotaRes.data);
+        }
+
+        const tList = typesRes?.data?.data || typesRes?.data || typesRes;
+        if (Array.isArray(tList)) {
+          setAdminFabricTypes(tList.filter((item: any) => item && item.name));
+        }
+
+        const qList = qualitiesRes?.data?.data || qualitiesRes?.data || qualitiesRes;
+        if (Array.isArray(qList)) {
+          const list = qList
+            .map((item: any) => (typeof item === 'string' ? item : item.quality))
+            .filter((q: string) => Boolean(q && q.trim()));
+          setExistingQualities(list);
         }
 
         const prof = profileRes?.data?.data || profileRes?.data || profileRes;
@@ -80,6 +124,17 @@ export default function CreateListingPage() {
           const l = listingRes?.data?.data || listingRes?.data || listingRes;
           if (l) {
             setTitle(l.title || '');
+            const existingQ = l.fabricQuality || l.fabricType?.name || '';
+            if (existingQ) {
+              setFabricQuality(existingQ);
+              setCustomQuality(existingQ);
+              const inAdmin = Array.isArray(tList) && tList.some(
+                (item: any) => item?.name?.toLowerCase() === existingQ.toLowerCase()
+              );
+              if (!inAdmin && l.fabricQuality) {
+                setIsCustomMode(true);
+              }
+            }
             setDescription(l.description || '');
             if (l.city) setCity(l.city);
             if (l.state) setState(l.state);
@@ -99,6 +154,44 @@ export default function CreateListingPage() {
     }
     init();
   }, [id, isEditMode]);
+
+  // Dropdown options: "+ Add New" option first, then all Admin Fabric Types, then existing listing qualities
+  const dropdownOptions: DropdownOption[] = useMemo(() => {
+    const opts: DropdownOption[] = [
+      {
+        label: 'Add New Fabric Quality (Type Custom)...',
+        value: '__ADD_NEW__',
+        badge: 'New',
+      },
+    ];
+
+    adminFabricTypes.forEach((t) => {
+      opts.push({
+        label: t.name,
+        value: t.name,
+      });
+    });
+
+    existingQualities.forEach((q) => {
+      if (!opts.some((o) => o.value.toLowerCase() === q.toLowerCase())) {
+        opts.push({
+          label: q,
+          value: q,
+        });
+      }
+    });
+
+    POPULAR_QUALITIES.forEach((q) => {
+      if (!opts.some((o) => o.value.toLowerCase() === q.toLowerCase())) {
+        opts.push({
+          label: q,
+          value: q,
+        });
+      }
+    });
+
+    return opts;
+  }, [adminFabricTypes, existingQualities]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,17 +286,19 @@ export default function CreateListingPage() {
       return;
     }
 
-    if (!isEditMode && quota && quota.remaining <= 0) {
-      setError('Listing quota exhausted. Please upgrade your subscription package to create new listings.');
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError('');
 
+      const trimmedQuality = (isCustomMode ? customQuality : fabricQuality).trim();
+      const matchedAdminType = adminFabricTypes.find(
+        (t) => t.name.trim().toLowerCase() === trimmedQuality.toLowerCase()
+      );
+
       const payload: any = {
         title: title.trim(),
+        fabricTypeId: matchedAdminType ? matchedAdminType.id : undefined,
+        fabricQuality: trimmedQuality || undefined,
         description: description.trim(),
         city: city.trim() || 'India',
         state: state.trim() || 'India',
@@ -237,7 +332,7 @@ export default function CreateListingPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-16 font-sans">
+    <div className="max-w-3xl mx-auto space-y-6 pb-4 sm:pb-6 font-sans">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -248,37 +343,33 @@ export default function CreateListingPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {isEditMode ? 'Edit Surplus Fabric Listing' : 'Add New Listing'}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Only title, description, and photos/video needed — location is automatically set from your profile
+              Title, fabric quality, description, and photos/video — location auto-synced from profile
             </p>
           </div>
         </div>
 
-        {quota && !isEditMode && (
-          <div className="px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>
-              Remaining Credits: <strong>{quota.remaining}</strong> / {quota.total}
-            </span>
-          </div>
-        )}
+        <div className="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          <span>100% Free Listing</span>
+        </div>
       </div>
 
       {/* Auto-bound Location Banner */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/50 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-start sm:items-center gap-3">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/50 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-start sm:items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
             <MapPin className="w-5 h-5 stroke-[2.2]" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="text-xs font-bold text-slate-900">
                 Listing Location: {city ? `${city}${state ? `, ${state}` : ''}` : 'Location not set in profile'}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
                 Profile Synced
               </span>
             </div>
@@ -308,7 +399,7 @@ export default function CreateListingPage() {
       {/* Simplified Add Listing Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title & Description Card */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
             <FileText className="w-4 h-4 text-blue-600" />
             Stock Information
@@ -323,38 +414,139 @@ export default function CreateListingPage() {
             required
           />
 
+          {/* Fabric Quality / Type - Clean Dropdown with Add New Mode */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                <span>Fabric Quality</span>
+                <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                {isCustomMode && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                    Custom New
+                  </span>
+                )}
+              </label>
+
+              {isCustomMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomMode(false)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline transition"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Choose from Dropdown</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomMode(true);
+                    setCustomQuality(fabricQuality);
+                  }}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add New</span>
+                </button>
+              )}
+            </div>
+
+            {isCustomMode ? (
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customQuality}
+                    onChange={(e) => {
+                      setCustomQuality(e.target.value);
+                      setFabricQuality(e.target.value);
+                    }}
+                    placeholder="Type your new fabric quality (e.g. 60x60 Cambric, Rayon Slub, Satin)..."
+                    autoFocus
+                    className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-9 py-2 text-sm text-slate-800 font-medium placeholder:text-slate-400 shadow-2xs transition-all focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {customQuality && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomQuality('');
+                        setFabricQuality('');
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition"
+                      title="Clear"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Type any new fabric quality name not in the dropdown list</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomMode(false)}
+                    className="text-slate-500 hover:text-slate-700 underline font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <SelectDropdown
+                  value={fabricQuality}
+                  onChange={(val) => {
+                    if (val === '__ADD_NEW__') {
+                      setIsCustomMode(true);
+                      setCustomQuality('');
+                      setFabricQuality('');
+                    } else {
+                      setFabricQuality(val);
+                    }
+                  }}
+                  options={dropdownOptions}
+                  placeholder="Select Fabric Quality from list..."
+                  searchPlaceholder="Search admin fabrics..."
+                  searchable={true}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Select from admin-added fabrics, or click <strong>"+ Add New"</strong> to type custom
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Description *
             </label>
             <textarea
-              rows={5}
+              rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your surplus fabric (e.g. Quality, weave, roll details, width, GSM, condition, reason for surplus sale, inspection ready, minimum sample availability)..."
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition leading-relaxed"
+              placeholder="Describe your surplus fabric (e.g. weave, roll details, width, GSM, condition, reason for surplus sale)..."
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition leading-relaxed"
               required
             />
             <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
-              <span>Include any key fabric details for prospective buyers</span>
+              <span>Include key fabric details for prospective buyers</span>
               <span>{description.length} characters</span>
             </div>
           </div>
         </div>
 
         {/* Photos (Images) Section */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div className="min-w-0 pr-2">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Camera className="w-4 h-4 text-blue-600" />
-                Fabric Photos
+                <Camera className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Fabric Photos</span>
               </h2>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Upload clear photos of fabric rolls, selvedge, print, or weave (up to 6 photos)
               </p>
             </div>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-bold text-slate-600 shrink-0 whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200">
               {images.length} / 6
             </span>
           </div>
@@ -414,7 +606,7 @@ export default function CreateListingPage() {
         </div>
 
         {/* Video Upload Section */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Video className="w-4 h-4 text-blue-600" />
@@ -480,7 +672,7 @@ export default function CreateListingPage() {
         </div>
 
         {/* Submit Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2">
           <Link
             to="/listings"
             className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition text-center"

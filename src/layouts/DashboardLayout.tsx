@@ -62,7 +62,7 @@ export default function DashboardLayout() {
     { label: 'My Listed Stock (Sell)', path: '/listings', icon: ListFilter },
     { label: 'Add Stock Lot', path: '/listings/new', icon: PackagePlus, highlight: true },
     { label: 'Performance & Inquiries', path: '/analytics', icon: BarChart3 },
-    { label: 'Subscription & Quota', path: '/subscription', icon: CreditCard },
+    { label: 'Free Membership', path: '/subscription', icon: CreditCard },
     { label: 'Company Profile', path: '/profile', icon: UserCheck },
   ];
 
@@ -171,6 +171,19 @@ export default function DashboardLayout() {
         </div>
       )}
 
+      {/* Quick External Link for Mobile Drawer */}
+      <div className="px-4 py-2.5 border-t border-slate-100 lg:hidden">
+        <a
+          href={buyerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200"
+        >
+          <span>Open Buyer Portal</span>
+          <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+        </a>
+      </div>
+
       {/* User Footer */}
       <div className="p-3.5 border-t border-slate-200/80 bg-slate-50/70">
         <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs group">
@@ -234,17 +247,16 @@ export default function DashboardLayout() {
               <Menu className="w-6 h-6" />
             </button>
             <div className="min-w-0">
-              <h2 className="text-lg md:text-xl font-bold text-slate-900 truncate tracking-tight">{currentPage.title}</h2>
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-900 truncate tracking-tight">{currentPage.title}</h2>
               <p className="hidden sm:block text-xs font-medium text-slate-500 mt-0.5 truncate">{currentPage.desc}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:space-x-3 shrink-0">
-            {quotaInfo && (
-              <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold shadow-2xs">
-                <span>{quotaInfo.remaining} Listing Credits Left</span>
-              </div>
-            )}
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>100% Free Unlimited Lots</span>
+            </div>
 
             {location.pathname !== '/listings/new' && (
               <button
@@ -261,10 +273,9 @@ export default function DashboardLayout() {
               href={buyerUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border border-slate-200/80 shadow-2xs"
+              className="hidden sm:flex px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all items-center gap-1.5 border border-slate-200/80 shadow-2xs"
             >
-              <span className="hidden sm:inline">Buyer Portal</span>
-              <span className="sm:hidden">Buyer</span>
+              <span>Buyer Portal</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </div>
@@ -272,7 +283,7 @@ export default function DashboardLayout() {
 
         {/* View body */}
         <div className="flex-1 overflow-y-auto w-full max-w-full">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          <div className="p-3.5 sm:p-5 md:p-8 max-w-7xl mx-auto pb-6 sm:pb-8">
             <Outlet />
           </div>
         </div>

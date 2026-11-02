@@ -162,9 +162,9 @@ export default function SellerProfilePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-12">
+    <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 pb-4 sm:pb-8 font-sans">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
           Company Profile & Contact Settings
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
@@ -188,7 +188,7 @@ export default function SellerProfilePage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 sm:p-10 rounded-3xl border border-slate-200/80 shadow-sm space-y-6"
+        className="bg-white p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-sm space-y-6"
       >
         <CommonTextField
           label="Company / Mill Name *"
@@ -340,25 +340,25 @@ export default function SellerProfilePage() {
           />
         </div>
 
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+        <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <label className="flex items-start sm:items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
             <input
               type="checkbox"
               name="publicContactEnabled"
               checked={profile.publicContactEnabled}
               onChange={handleChange}
-              className="w-4 h-4 rounded text-blue-600"
+              className="w-4 h-4 rounded text-blue-600 mt-0.5 sm:mt-0 shrink-0"
             />
-            <span>Enable Public Buyer Contact (Show Phone & WhatsApp on listing pages)</span>
+            <span className="leading-snug">Enable Public Buyer Contact (Show Phone & WhatsApp on listing pages)</span>
           </label>
 
           <CommonButton
             type="submit"
             isLoading={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+            className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
           >
-            <Save className="w-3.5 h-3.5 mr-1" />
-            Save Profile
+            <Save className="w-4 h-4 mr-1" />
+            <span>Save Profile</span>
           </CommonButton>
         </div>
       </form>

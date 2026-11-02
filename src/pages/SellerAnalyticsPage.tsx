@@ -155,27 +155,27 @@ export default function SellerAnalyticsPage() {
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans text-slate-800">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans text-slate-800 pb-4 sm:pb-8">
       {/* Banner Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold uppercase tracking-wider">
               Seller Performance Matrix
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight mt-1.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-1.5">
             Listing Performance & Inquiries Analytics
           </h1>
-          <p className="text-xs md:text-sm text-slate-500 font-medium mt-1 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 leading-relaxed">
             Track buyer engagement, WhatsApp chat leads, phone call inquiries, and listing clearance velocity for {profile.companyName || 'your account'}.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-fit self-start md:self-auto">
           <Link
             to="/listings/new"
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 select-none active:scale-95"
+            className="w-fit self-start md:self-auto px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs inline-flex items-center gap-1.5 select-none active:scale-95"
           >
             <PackagePlus className="w-4 h-4" />
             <span>Add New Stock Lot</span>
@@ -183,78 +183,78 @@ export default function SellerAnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Overview Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Overview Grid - 2x2 on mobile, 4 columns on large screens */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Total Views */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-              Total Stock Views
+        <div className="bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-1">
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
+              Stock Views
             </span>
-            <div className="text-2xl md:text-3xl font-extrabold text-slate-900">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
               {kpis.totalViews || 0}
             </div>
-            <p className="text-[11px] font-medium text-slate-500">
-              Across {kpis.totalListings || 0} stock lots
+            <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
+              Across {kpis.totalListings || 0} lots
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-            <Eye className="w-6 h-6 stroke-[2.2]" />
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <Eye className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
         </div>
 
         {/* Total Inquiries */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-              Buyer Inquiries Received
+        <div className="bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-1">
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
+              Inquiries
             </span>
-            <div className="text-2xl md:text-3xl font-extrabold text-emerald-600">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-emerald-600">
               {kpis.totalInquiries || 0}
             </div>
-            <p className="text-[11px] font-medium text-slate-500">
-              {kpis.whatsappClicks || 0} WhatsApp • {kpis.phoneCalls || 0} Calls
+            <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
+              {kpis.whatsappClicks || 0} WA • {kpis.phoneCalls || 0} Call
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-6 h-6 stroke-[2.2]" />
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <MessageSquare className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
         </div>
 
         {/* Quota Utilization */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-              Quota Consumption
+        <div className="bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-1">
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
+              Quota Usage
             </span>
-            <div className="text-2xl md:text-3xl font-extrabold text-slate-900">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
               {kpis.quotaUtilization || 0}%
             </div>
-            <p className="text-[11px] font-medium text-slate-500">
-              {subscription.usedQuota || 0} of {subscription.quotaLimit || '∞'} lots used
+            <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 truncate">
+              {subscription.usedQuota || 0} of {subscription.quotaLimit || '∞'} used
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-            <Layers className="w-6 h-6 stroke-[2.2]" />
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <Layers className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
         </div>
 
         {/* Seller Usefulness Score */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-              My Usefulness Score
+        <div className="bg-white border border-slate-200/90 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-2xs flex items-center justify-between">
+          <div className="space-y-0.5 sm:space-y-1 min-w-0 pr-1">
+            <span className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider block truncate">
+              Seller Score
             </span>
-            <div className="text-2xl md:text-3xl font-extrabold text-slate-900">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900">
               {score}
-              <span className="text-sm font-bold text-slate-400">/100</span>
+              <span className="text-xs sm:text-sm font-bold text-slate-400">/100</span>
             </div>
-            <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden mt-1">
+            <div className="w-16 sm:w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden mt-1">
               <div className={`h-full rounded-full ${scoreColor}`} style={{ width: `${score}%` }} />
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-            <Award className="w-6 h-6 stroke-[2.2]" />
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <Award className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
         </div>
       </div>
