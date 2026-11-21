@@ -49,13 +49,65 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 });
 
+export function syncSellerCookie(token: string | null, user: any | null) {
+  try {
+    if (token && user) {
+      const data = encodeURIComponent(JSON.stringify({ token, user }));
+      document.cookie = `dt_seller_session=${data}; path=/; max-age=2592000; SameSite=Lax`;
+    } else {
+      document.cookie = 'dt_seller_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    }
+  } catch (e) {
+    console.error('Failed to sync cookie:', e);
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SellerUser | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ssoUser = params.get('sso_user');
+      const ssoToken = params.get('sso_token');
+      if (ssoToken && ssoUser) {
+        const parsed = JSON.parse(ssoUser);
+        localStorage.setItem('seller_token', ssoToken);
+        localStorage.setItem('seller_user', ssoUser);
+        syncSellerCookie(ssoToken, parsed);
+        params.delete('sso_token');
+        params.delete('sso_user');
+        const newSearch = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState({}, '', `${window.location.pathname}${newSearch}`);
+        return parsed;
+      }
+    } catch {
+      // ignore
+    }
     const saved = localStorage.getItem('seller_user');
-    return saved ? JSON.parse(saved) : null;
+    const parsedSaved = saved ? JSON.parse(saved) : null;
+    const savedToken = localStorage.getItem('seller_token');
+    if (savedToken && parsedSaved) {
+      syncSellerCookie(savedToken, parsedSaved);
+    }
+    return parsedSaved;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('seller_token') || null);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ssoToken = params.get('sso_token');
+      if (ssoToken) return ssoToken;
+    } catch {
+      // ignore
+    }
+    return localStorage.getItem('seller_token') || null;
+  });
   const [loading, setLoading] = useState(true);
+
+  // Sync cookie on mount
+  useEffect(() => {
+    if (token && user) {
+      syncSellerCookie(token, user);
+    }
+  }, [token, user]);
 
   useEffect(() => {
     async function verifyAuth() {
@@ -66,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userData && userData.role === 'SELLER') {
             setUser(userData);
             localStorage.setItem('seller_user', JSON.stringify(userData));
+            syncSellerCookie(token, userData);
           } else {
             logout();
           }
@@ -85,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('seller_token', accessToken);
     if (refreshToken) localStorage.setItem('seller_refresh_token', refreshToken);
     localStorage.setItem('seller_user', JSON.stringify(userData));
+    syncSellerCookie(accessToken, userData);
   };
 
   const logout = () => {
@@ -93,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('seller_token');
     localStorage.removeItem('seller_refresh_token');
     localStorage.removeItem('seller_user');
+    syncSellerCookie(null, null);
   };
 
   const refreshUser = async () => {
@@ -102,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userData && userData.role === 'SELLER') {
         setUser(userData);
         localStorage.setItem('seller_user', JSON.stringify(userData));
+        syncSellerCookie(token, userData);
       }
     } catch (e) {
       console.error(e);

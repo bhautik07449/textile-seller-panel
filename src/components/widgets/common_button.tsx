@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils';
 
 export interface CommonButtonProps extends ButtonProps {
   isLoading?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 const CommonButton: React.FC<CommonButtonProps> = ({
@@ -14,6 +15,7 @@ const CommonButton: React.FC<CommonButtonProps> = ({
   size = 'default',
   className,
   disabled,
+  icon: Icon,
   ...props
 }) => {
   return (
@@ -30,6 +32,7 @@ const CommonButton: React.FC<CommonButtonProps> = ({
         </div>
       )}
       <span className={cn(isLoading && 'opacity-0 flex items-center gap-2', !isLoading && 'flex items-center gap-2')}>
+        {Icon && <Icon className="w-4 h-4 stroke-[2.2] shrink-0" />}
         {children}
       </span>
     </Button>

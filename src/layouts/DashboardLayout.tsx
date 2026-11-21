@@ -270,12 +270,12 @@ export default function DashboardLayout() {
             )}
 
             <a
-              href={buyerUrl}
+              href={user && localStorage.getItem('seller_token') ? `${buyerUrl}/?sso_token=${encodeURIComponent(localStorage.getItem('seller_token') || '')}&sso_user=${encodeURIComponent(JSON.stringify(user))}` : buyerUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all items-center gap-1.5 border border-slate-200/80 shadow-2xs"
             >
-              <span>Buyer Portal</span>
+              <span>Explore Marketplace</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </div>

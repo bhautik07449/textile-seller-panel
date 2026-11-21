@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
-  Upload,
   X,
   AlertCircle,
   ArrowLeft,
@@ -9,16 +8,14 @@ import {
   Camera,
   Loader2,
   MapPin,
-  Building2,
   Video,
   Film,
   Sparkles,
   ExternalLink,
   FileText,
-  ChevronDown,
-  Check,
   Plus,
-  Search,
+  Coins,
+  Scale,
 } from 'lucide-react';
 import api from '../api/client';
 import CommonTextField from '../components/widgets/common_textField';
@@ -33,23 +30,10 @@ interface QuotaData {
   remaining: number;
 }
 
-interface AdminFabricType {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  isActive?: boolean;
-}
-
-const POPULAR_QUALITIES = [
-  '60x60 Cambric',
-  '40x40 Poplin',
-  'Rayon 14kg',
-  'Cotton Slub',
-  'Poly Crepe',
-  'Satin',
-  'Organza',
-  'Chanderi',
+const QUANTITY_TYPE_OPTIONS: DropdownOption[] = [
+  { label: 'Meter (Mtr)', value: 'meter' },
+  { label: 'Kilogram (Kg)', value: 'kg' },
+  { label: 'Pieces (Pcs / Pecs)', value: 'pieces' },
 ];
 
 export default function CreateListingPage() {
@@ -63,16 +47,25 @@ export default function CreateListingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Simplified form state: Title, Fabric Quality & Description
+  // 1. Listing Name (Title) - Select from Master or Custom New
   const [title, setTitle] = useState('');
-  const [fabricQuality, setFabricQuality] = useState('');
-  const [isCustomMode, setIsCustomMode] = useState(false);
-  const [customQuality, setCustomQuality] = useState('');
-  const [adminFabricTypes, setAdminFabricTypes] = useState<AdminFabricType[]>([]);
-  const [existingQualities, setExistingQualities] = useState<string[]>([]);
-  const [description, setDescription] = useState('');
+  const [isCustomTitle, setIsCustomTitle] = useState(false);
+  const [customTitle, setCustomTitle] = useState('');
+  const [masterListingNames, setMasterListingNames] = useState<string[]>([]);
 
-  // Media
+  // 2. Machine Category - Select from Master or Custom New
+  const [machineCategory, setMachineCategory] = useState('');
+  const [isCustomMachine, setIsCustomMachine] = useState(false);
+  const [customMachineCategory, setCustomMachineCategory] = useState('');
+  const [masterMachineCategories, setMasterMachineCategories] = useState<string[]>([]);
+
+  // 3. Pricing & Quantity with Type (Meter, Kg, Pieces)
+  const [priceAmount, setPriceAmount] = useState('');
+  const [quantityAmount, setQuantityAmount] = useState('');
+  const [quantityUnit, setQuantityUnit] = useState<'meter' | 'kg' | 'pieces'>('meter');
+
+  // 4. Description & Media
+  const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -87,10 +80,11 @@ export default function CreateListingPage() {
     async function init() {
       try {
         setLoading(true);
-        const [quotaRes, profileRes, qualitiesRes, typesRes]: any = await Promise.all([
+        const [quotaRes, profileRes, namesRes, machineRes, typesRes]: any = await Promise.all([
           api.get('/seller/listing-quota').catch(() => null),
           api.get('/seller/profile').catch(() => null),
-          api.get('/fabric-qualities').catch(() => null),
+          api.get('/listing-names').catch(() => null),
+          api.get('/machine-categories').catch(() => null),
           api.get('/fabric-types').catch(() => null),
         ]);
 
@@ -98,18 +92,16 @@ export default function CreateListingPage() {
           setQuota(quotaRes.data);
         }
 
+        const rawNames = namesRes?.data?.data || namesRes?.data || namesRes;
+        const namesList = Array.isArray(rawNames) ? rawNames : [];
         const tList = typesRes?.data?.data || typesRes?.data || typesRes;
-        if (Array.isArray(tList)) {
-          setAdminFabricTypes(tList.filter((item: any) => item && item.name));
-        }
+        const fabricTypeNames = Array.isArray(tList) ? tList.map((t: any) => t.name) : [];
+        const combinedNames = Array.from(new Set([...namesList, ...fabricTypeNames])).filter(Boolean);
+        setMasterListingNames(combinedNames);
 
-        const qList = qualitiesRes?.data?.data || qualitiesRes?.data || qualitiesRes;
-        if (Array.isArray(qList)) {
-          const list = qList
-            .map((item: any) => (typeof item === 'string' ? item : item.quality))
-            .filter((q: string) => Boolean(q && q.trim()));
-          setExistingQualities(list);
-        }
+        const rawMachines = machineRes?.data?.data || machineRes?.data || machineRes;
+        const machineList = Array.isArray(rawMachines) ? rawMachines : [];
+        setMasterMachineCategories(machineList);
 
         const prof = profileRes?.data?.data || profileRes?.data || profileRes;
         if (prof) {
@@ -123,27 +115,45 @@ export default function CreateListingPage() {
           const listingRes: any = await api.get(`/seller/listings/${id}`);
           const l = listingRes?.data?.data || listingRes?.data || listingRes;
           if (l) {
-            setTitle(l.title || '');
-            const existingQ = l.fabricQuality || l.fabricType?.name || '';
-            if (existingQ) {
-              setFabricQuality(existingQ);
-              setCustomQuality(existingQ);
-              const inAdmin = Array.isArray(tList) && tList.some(
-                (item: any) => item?.name?.toLowerCase() === existingQ.toLowerCase()
-              );
-              if (!inAdmin && l.fabricQuality) {
-                setIsCustomMode(true);
-              }
+            const existingTitle = l.title || '';
+            setTitle(existingTitle);
+            setCustomTitle(existingTitle);
+            if (existingTitle && !combinedNames.some((n: string) => n.toLowerCase() === existingTitle.toLowerCase())) {
+              setIsCustomTitle(true);
             }
+
+            const existingMachine = l.machineCategory || '';
+            setMachineCategory(existingMachine);
+            setCustomMachineCategory(existingMachine);
+            if (existingMachine && !machineList.some((m: string) => m.toLowerCase() === existingMachine.toLowerCase())) {
+              setIsCustomMachine(true);
+            }
+
+            if (l.quantityAmount !== undefined && l.quantityAmount !== null) {
+              setQuantityAmount(String(l.quantityAmount));
+            }
+            if (l.priceAmount !== undefined && l.priceAmount !== null) {
+              setPriceAmount(String(l.priceAmount));
+            }
+
+            const rawUnit = (l.quantityUnit || '').toLowerCase();
+            if (rawUnit.includes('meter') || rawUnit.includes('mtr')) {
+              setQuantityUnit('meter');
+            } else if (rawUnit.includes('kg') || rawUnit.includes('kilo')) {
+              setQuantityUnit('kg');
+            } else if (rawUnit.includes('pc') || rawUnit.includes('piece') || rawUnit.includes('pec')) {
+              setQuantityUnit('pieces');
+            } else {
+              setQuantityUnit('meter');
+            }
+
             setDescription(l.description || '');
             if (l.city) setCity(l.city);
             if (l.state) setState(l.state);
             if (l.images && Array.isArray(l.images)) {
               setImages(l.images.map((img: any) => (typeof img === 'string' ? img : img.imageUrl)));
             }
-            if (l.videoUrl) {
-              setVideoUrl(l.videoUrl);
-            }
+            if (l.videoUrl) setVideoUrl(l.videoUrl);
           }
         }
       } catch (err: any) {
@@ -155,43 +165,49 @@ export default function CreateListingPage() {
     init();
   }, [id, isEditMode]);
 
-  // Dropdown options: "+ Add New" option first, then all Admin Fabric Types, then existing listing qualities
-  const dropdownOptions: DropdownOption[] = useMemo(() => {
+  // Dropdown options for Listing Name
+  const listingNameOptions: DropdownOption[] = useMemo(() => {
     const opts: DropdownOption[] = [
       {
-        label: 'Add New Fabric Quality (Type Custom)...',
+        label: '+ Add New Listing Name (Type Custom)...',
         value: '__ADD_NEW__',
         badge: 'New',
       },
     ];
 
-    adminFabricTypes.forEach((t) => {
-      opts.push({
-        label: t.name,
-        value: t.name,
-      });
-    });
-
-    existingQualities.forEach((q) => {
-      if (!opts.some((o) => o.value.toLowerCase() === q.toLowerCase())) {
+    masterListingNames.forEach((n) => {
+      if (!opts.some((o) => o.value.toLowerCase() === n.toLowerCase())) {
         opts.push({
-          label: q,
-          value: q,
-        });
-      }
-    });
-
-    POPULAR_QUALITIES.forEach((q) => {
-      if (!opts.some((o) => o.value.toLowerCase() === q.toLowerCase())) {
-        opts.push({
-          label: q,
-          value: q,
+          label: n,
+          value: n,
         });
       }
     });
 
     return opts;
-  }, [adminFabricTypes, existingQualities]);
+  }, [masterListingNames]);
+
+  // Dropdown options for Machine Category
+  const machineCategoryOptions: DropdownOption[] = useMemo(() => {
+    const opts: DropdownOption[] = [
+      {
+        label: '+ Add New Machine Category (Type Custom)...',
+        value: '__ADD_NEW__',
+        badge: 'New',
+      },
+    ];
+
+    masterMachineCategories.forEach((m) => {
+      if (!opts.some((o) => o.value.toLowerCase() === m.toLowerCase())) {
+        opts.push({
+          label: m,
+          value: m,
+        });
+      }
+    });
+
+    return opts;
+  }, [masterMachineCategories]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -276,8 +292,19 @@ export default function CreateListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      setError('Please enter a listing title (e.g. Cotton Printed Surplus Fabric Lot 5000 Metres).');
+    const finalTitle = (isCustomTitle ? customTitle : title).trim();
+    if (!finalTitle) {
+      setError('Please select or enter a listing name.');
+      return;
+    }
+
+    if (!quantityAmount || parseFloat(String(quantityAmount)) <= 0) {
+      setError('Please enter a valid quantity greater than zero.');
+      return;
+    }
+
+    if (!priceAmount || parseFloat(String(priceAmount)) <= 0) {
+      setError('Please enter a valid rate/price per unit.');
       return;
     }
 
@@ -290,15 +317,19 @@ export default function CreateListingPage() {
       setSubmitting(true);
       setError('');
 
-      const trimmedQuality = (isCustomMode ? customQuality : fabricQuality).trim();
-      const matchedAdminType = adminFabricTypes.find(
-        (t) => t.name.trim().toLowerCase() === trimmedQuality.toLowerCase()
-      );
+      const finalMachineCategory = (isCustomMachine ? customMachineCategory : machineCategory).trim();
+      const displayUnit = quantityUnit === 'meter' ? 'Meter' : quantityUnit === 'kg' ? 'Kg' : 'Pieces';
+      const displayPriceUnit = `Per ${quantityUnit === 'meter' ? 'Meter' : quantityUnit === 'kg' ? 'Kg' : 'Piece'}`;
 
       const payload: any = {
-        title: title.trim(),
-        fabricTypeId: matchedAdminType ? matchedAdminType.id : undefined,
-        fabricQuality: trimmedQuality || undefined,
+        title: finalTitle,
+        machineCategory: finalMachineCategory || undefined,
+        quantityAmount: parseFloat(String(quantityAmount)),
+        quantityUnit: displayUnit,
+        priceAmount: parseFloat(String(priceAmount)),
+        priceUnit: displayPriceUnit,
+        minimumOrderQuantity: 1,
+        minimumOrderUnit: displayUnit,
         description: description.trim(),
         city: city.trim() || 'India',
         state: state.trim() || 'India',
@@ -347,7 +378,7 @@ export default function CreateListingPage() {
               {isEditMode ? 'Edit Surplus Fabric Listing' : 'Add New Listing'}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Title, fabric quality, description, and photos/video — location auto-synced from profile
+              Select listing name, machine category, rate & quantity type — location auto-synced from profile
             </p>
           </div>
         </div>
@@ -396,52 +427,42 @@ export default function CreateListingPage() {
         </div>
       )}
 
-      {/* Simplified Add Listing Form */}
+      {/* Main Listing Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title & Description Card */}
-        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-5">
+        {/* Stock & Specification Details Card */}
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
             <FileText className="w-4 h-4 text-blue-600" />
-            Stock Information
+            Stock & Listing Information
           </h2>
 
-          <CommonTextField
-            label="Listing Title *"
-            name="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. 5000 Mtrs Cotton Poplin Printed Surplus Fabric Lot"
-            required
-          />
-
-          {/* Fabric Quality / Type - Clean Dropdown with Add New Mode */}
+          {/* 1. Listing Name (Title) - Select from Master or Type Custom */}
           <div>
             <div className="flex items-center justify-between gap-2 mb-1.5">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-                <span>Fabric Quality</span>
-                <span className="text-xs text-slate-400 font-normal">(Optional)</span>
-                {isCustomMode && (
+              <label className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                <span>Listing Name *</span>
+                {isCustomTitle && (
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
                     Custom New
                   </span>
                 )}
               </label>
 
-              {isCustomMode ? (
+              {isCustomTitle ? (
                 <button
                   type="button"
-                  onClick={() => setIsCustomMode(false)}
+                  onClick={() => setIsCustomTitle(false)}
                   className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline transition"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Choose from Dropdown</span>
+                  <span>Choose from Master List</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
-                    setIsCustomMode(true);
-                    setCustomQuality(fabricQuality);
+                    setIsCustomTitle(true);
+                    setCustomTitle(title);
                   }}
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline transition"
                 >
@@ -451,26 +472,27 @@ export default function CreateListingPage() {
               )}
             </div>
 
-            {isCustomMode ? (
+            {isCustomTitle ? (
               <div className="space-y-1.5">
                 <div className="relative">
                   <input
                     type="text"
-                    value={customQuality}
+                    value={customTitle}
                     onChange={(e) => {
-                      setCustomQuality(e.target.value);
-                      setFabricQuality(e.target.value);
+                      setCustomTitle(e.target.value);
+                      setTitle(e.target.value);
                     }}
-                    placeholder="Type your new fabric quality (e.g. 60x60 Cambric, Rayon Slub, Satin)..."
+                    placeholder="Type your new listing name (e.g. Cotton 60x60 Cambric Printed Lot, Denim Surplus Rolls)..."
                     autoFocus
                     className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-9 py-2 text-sm text-slate-800 font-medium placeholder:text-slate-400 shadow-2xs transition-all focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
+                    required
                   />
-                  {customQuality && (
+                  {customTitle && (
                     <button
                       type="button"
                       onClick={() => {
-                        setCustomQuality('');
-                        setFabricQuality('');
+                        setCustomTitle('');
+                        setTitle('');
                       }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition"
                       title="Clear"
@@ -480,10 +502,10 @@ export default function CreateListingPage() {
                   )}
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Type any new fabric quality name not in the dropdown list</span>
+                  <span>Type any new listing name not in the master dropdown list</span>
                   <button
                     type="button"
-                    onClick={() => setIsCustomMode(false)}
+                    onClick={() => setIsCustomTitle(false)}
                     className="text-slate-500 hover:text-slate-700 underline font-medium"
                   >
                     Cancel
@@ -493,29 +515,193 @@ export default function CreateListingPage() {
             ) : (
               <div>
                 <SelectDropdown
-                  value={fabricQuality}
+                  value={title}
                   onChange={(val) => {
                     if (val === '__ADD_NEW__') {
-                      setIsCustomMode(true);
-                      setCustomQuality('');
-                      setFabricQuality('');
+                      setIsCustomTitle(true);
+                      setCustomTitle('');
+                      setTitle('');
                     } else {
-                      setFabricQuality(val);
+                      setTitle(val);
                     }
                   }}
-                  options={dropdownOptions}
-                  placeholder="Select Fabric Quality from list..."
-                  searchPlaceholder="Search admin fabrics..."
+                  options={listingNameOptions}
+                  placeholder="Select Listing Name from master list..."
+                  searchPlaceholder="Search listing names..."
                   searchable={true}
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Select from admin-added fabrics, or click <strong>"+ Add New"</strong> to type custom
+                  Select from master textile products, or click <strong>"+ Add New"</strong> to type custom
                 </p>
               </div>
             )}
           </div>
 
+          {/* 2. Machine Category - Select from Master or Type Custom */}
           <div>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <label className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                <span>Machine Category</span>
+                <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                {isCustomMachine && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    Custom New
+                  </span>
+                )}
+              </label>
+
+              {isCustomMachine ? (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomMachine(false)}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline transition"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Choose from Machine List</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomMachine(true);
+                    setCustomMachineCategory(machineCategory);
+                  }}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Add New</span>
+                </button>
+              )}
+            </div>
+
+            {isCustomMachine ? (
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customMachineCategory}
+                    onChange={(e) => {
+                      setCustomMachineCategory(e.target.value);
+                      setMachineCategory(e.target.value);
+                    }}
+                    placeholder="Type new machine category..."
+                    autoFocus
+                    className="flex h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-9 py-2 text-sm text-slate-800 font-medium placeholder:text-slate-400 shadow-2xs transition-all focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                  {customMachineCategory && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomMachineCategory('');
+                        setMachineCategory('');
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition"
+                      title="Clear"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Type any machine type not present in dropdown</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomMachine(false)}
+                    className="text-slate-500 hover:text-slate-700 underline font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <SelectDropdown
+                  value={machineCategory}
+                  onChange={(val) => {
+                    if (val === '__ADD_NEW__') {
+                      setIsCustomMachine(true);
+                      setCustomMachineCategory('');
+                      setMachineCategory('');
+                    } else {
+                      setMachineCategory(val);
+                    }
+                  }}
+                  options={machineCategoryOptions}
+                  placeholder="Select Machine Category..."
+                  searchPlaceholder="Search machine categories..."
+                  searchable={true}
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Select loom / machine category, or click <strong>"+ Add New"</strong> to type custom
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Rate, Quantity & Quantity Type (Meter, Kg, Pieces) */}
+          <div className="pt-2 border-t border-slate-100">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-blue-600" />
+              <span>Pricing & Quantity Details</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Rate / Price */}
+              <div>
+                <CommonTextField
+                  label="Rate (₹ per Unit) *"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 120"
+                  value={priceAmount}
+                  onChange={(e) => setPriceAmount(e.target.value)}
+                  prefixIcon={<span className="font-bold text-slate-500 text-sm">₹</span>}
+                  required
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Rate per {quantityUnit === 'meter' ? 'Meter' : quantityUnit === 'kg' ? 'Kg' : 'Piece'}
+                </span>
+              </div>
+
+              {/* Total Quantity */}
+              <div>
+                <CommonTextField
+                  label="Available Quantity *"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 5000"
+                  value={quantityAmount}
+                  onChange={(e) => setQuantityAmount(e.target.value)}
+                  prefixIcon={<Scale className="w-3.5 h-3.5 text-slate-400" />}
+                  required
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Total stock volume for sale
+                </span>
+              </div>
+
+              {/* Quantity Type (select - pecs, meter, kg) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 select-none">
+                  Quantity Type (Unit) *
+                </label>
+                <SelectDropdown
+                  value={quantityUnit}
+                  onChange={(val: any) => setQuantityUnit(val)}
+                  options={QUANTITY_TYPE_OPTIONS}
+                  size="md"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Select: Meter, Kg, or Pieces (Pcs)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Description */}
+          <div className="pt-2 border-t border-slate-100">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Description *
             </label>
@@ -528,7 +714,7 @@ export default function CreateListingPage() {
               required
             />
             <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1">
-              <span>Include key fabric details for prospective buyers</span>
+              <span>Include key fabric specifications for prospective buyers</span>
               <span>{description.length} characters</span>
             </div>
           </div>
