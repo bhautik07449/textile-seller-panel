@@ -94,9 +94,7 @@ export default function CreateListingPage() {
 
         const rawNames = namesRes?.data?.data || namesRes?.data || namesRes;
         const namesList = Array.isArray(rawNames) ? rawNames : [];
-        const tList = typesRes?.data?.data || typesRes?.data || typesRes;
-        const fabricTypeNames = Array.isArray(tList) ? tList.map((t: any) => t.name) : [];
-        const combinedNames = Array.from(new Set([...namesList, ...fabricTypeNames])).filter(Boolean);
+        const combinedNames = Array.from(new Set([...namesList])).filter(Boolean);
         setMasterListingNames(combinedNames);
 
         const rawMachines = machineRes?.data?.data || machineRes?.data || machineRes;
@@ -467,7 +465,7 @@ export default function CreateListingPage() {
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Add New</span>
+                  <span>Add New</span>
                 </button>
               )}
             </div>
@@ -569,7 +567,7 @@ export default function CreateListingPage() {
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Add New</span>
+                  <span>Add New</span>
                 </button>
               )}
             </div>
